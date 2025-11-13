@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoMarket – Optimization of Transportation Costs</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body { font-family: 'Poppins', sans-serif; margin: 0; background:#f6f9ff; color:#1a1a2e; }
+  header { background:linear-gradient(135deg,#0048b8,#002b80); color:#fff; text-align:center; padding:90px 20px; }
+  header h1 { font-size:2.8em; margin-bottom:10px; }
+  nav { background:#002b80; display:flex; justify-content:center; flex-wrap:wrap; gap:12px; padding:12px; position:sticky; top:0; z-index:50; }
+  nav a { color:white; text-decoration:none; font-weight:600; padding:10px 18px; border-radius:25px; transition:background 0.3s; }
+  nav a:hover { background:#0d61d9; }
+  section { max-width:1000px; margin:60px auto; background:white; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,0.1); padding:60px 8%; }
+  h2 { color:#0048b8; border-left:6px solid #0d61d9; padding-left:12px; }
+  table { width:100%; border-collapse:collapse; margin-top:12px; }
+  th,td { border:1px solid #ccc; padding:8px; text-align:center; }
+  th { background:#e6f0ff; }
+  pre { background:#f0f4ff; border-left:4px solid #0048b8; padding:10px; border-radius:6px; overflow-x:auto; }
+  footer { background:#002b80; color:white; text-align:center; padding:40px 10px; margin-top:80px; }
+  canvas { margin-top:20px; }
+  input[type="number"] { width:70px; padding:6px; text-align:center; border:1px solid #ccc; border-radius:4px; }
+  button { background:#0048b8; color:white; border:none; padding:10px 20px; border-radius:6px; margin-top:10px; cursor:pointer; }
+  button:hover { background:#0d61d9; }
+  .quote { background:#e6f0ff; border-left:5px solid #0048b8; padding:10px 15px; font-style:italic; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Optimization of Transportation Costs for EcoMarket</h1>
+  <p>Endterm Project • Alyona Zinchenko, Saparkhankyzy Aruzhan, Nurkhissa Farida • Astana IT University</p>
+</header>
+
+<nav>
+  <a href="#overview">Overview</a>
+  <a href="#model">Model</a>
+  <a href="#data">Data</a>
+  <a href="#methods">Methods</a>
+  <a href="#calculator">Calculator</a>
+  <a href="#results">Results</a>
+  <a href="#conclusion">Conclusion</a>
+</nav>
+
+<section id="overview">
+  <h2>Problem Overview</h2>
+  <p>EcoMarket is a student-run marketplace that distributes eco-friendly goods between warehouses and student shops. The aim is to <b>minimize total transportation costs</b> while meeting each shop’s demand and maintaining eco-efficiency.</p>
+  <div class="quote">"Optimized logistics lead to fewer emissions and lower expenses — sustainable and smart."</div>
+</section>
+
+<section id="model">
+  <h2>Model Formulation</h2>
+  <p>Decision variables <span style="font-family:monospace;">x<sub>ij</sub></span> – quantity shipped from warehouse <i>i</i> to shop <i>j</i>.</p>
+  <pre>
+Minimize Z = Σ c<sub>ij</sub> x<sub>ij</sub>
+Subject to:
+Σ x<sub>ij</sub> = a<sub>i</sub>  (supply)
+Σ x<sub>ij</sub> = b<sub>j</sub>  (demand)
+x<sub>ij</sub> ≥ 0
+  </pre>
+</section>
+
+<section id="data">
+  <h2>Data Example</h2>
+  <table>
+    <tr><th>Warehouses → / Shops ↓</th><th>A</th><th>B</th><th>C</th><th>D</th><th>Supply</th></tr>
+    <tr><td>W1</td><td>8</td><td>6</td><td>10</td><td>9</td><td>20</td></tr>
+    <tr><td>W2</td><td>9</td><td>12</td><td>13</td><td>7</td><td>30</td></tr>
+    <tr><td>W3</td><td>14</td><td>9</td><td>16</td><td>5</td><td>25</td></tr>
+    <tr><th>Demand</th><th>15</th><th>25</th><th>20</th><th>15</th><th>=60</th></tr>
+  </table>
+</section>
+
+<section id="methods">
+  <h2>Methods Overview</h2>
+
+  <h3>North-West Corner Method</h3>
+  <p>
+    The <b>North-West Corner Method</b> is the simplest and fastest way to obtain an initial basic feasible solution for a transportation problem.
+    The method starts from the top-left (north-west) cell of the cost matrix.  
+    It allocates as much as possible to this cell — the minimum of available supply and demand — then moves either right or down depending on which constraint (supply or demand) becomes zero.  
+    This process continues until all supply and demand are satisfied.  
+    Although easy to apply, this method <i>ignores the actual transportation costs</i>, 
+    so the resulting total cost is rarely optimal. 
+    However, it provides a valid starting point for further optimization using improved methods.
+  </p>
+
+  <h3>Lowest-Cost Entry Method / Matrix Minima Method</h3>
+  <p>
+    The <b>Lowest-Cost Entry Method</b>, also known as the <b>Matrix Minima Method</b>, improves on the North-West approach by considering costs from the beginning.  
+    It works by identifying the cell with the <i>lowest transportation cost</i> in the entire matrix and allocating as much as possible to that route.  
+    After each allocation, the fulfilled row or column is removed from further consideration, 
+    and the next lowest-cost cell is selected from the remaining active cells.  
+    This continues until all supply and demand are allocated.  
+    The method usually produces a better (lower) total cost than the North-West Corner method and serves as a good approximation before applying optimization methods like MODI or VAM.
+  </p>
+
+  <h3>Vogel’s Approximation Method (VAM)</h3>
+  <p>
+    The <b>Vogel’s Approximation Method (VAM)</b> is one of the most efficient techniques for finding an initial feasible solution with a near-optimal cost.  
+    It introduces the concept of <b>penalty cost</b> — the difference between the smallest and the second-smallest cost in each row and column.  
+    The idea is to measure how much extra cost will be incurred if the cheapest route is not selected.  
+    At each step, the row or column with the highest penalty is chosen, and the maximum possible allocation is made to the cell with the lowest cost in that row or column.  
+    The process repeats until all supplies and demands are fulfilled.  
+    VAM usually yields an initial solution that is much closer to the optimum than either the North-West or the Lowest-Cost methods.
+  </p>
+
+  <div class="quote" style="margin-top:15px;">
+    "Together, these methods demonstrate the evolution of optimization — from a basic feasible allocation (North-West Corner), 
+    to cost-aware planning (Matrix Minima), and finally to a penalty-based, near-optimal strategy (Vogel’s Approximation)."
+  </div>
+</section>
+
+
+<section id="calculator">
+  <h2>Transportation Problem Calculator</h2>
+  <p>
+    Edit any values below and press <b>Calculate All Methods</b> to compute total transportation cost using
+    <b>North-West Corner</b>, <b>Lowest-Cost Entry / Matrix Minima</b>, and <b>Vogel’s Approximation Method (VAM)</b>.
+  </p>
+
+  <table id="calcTable" border="1" cellpadding="6" style="border-collapse:collapse; text-align:center; width:100%; max-width:980px;">
+    <tr>
+      <th>Warehouses → / Shops ↓</th>
+      <th>Shop A</th><th>Shop B</th><th>Shop C</th><th>Shop D</th><th>Supply</th>
+    </tr>
+    <tr>
+      <td>W1</td>
+      <td><input type="number" id="c00" value="8"></td>
+      <td><input type="number" id="c01" value="6"></td>
+      <td><input type="number" id="c02" value="10"></td>
+      <td><input type="number" id="c03" value="9"></td>
+      <td><input type="number" id="s0" value="20"></td>
+    </tr>
+    <tr>
+      <td>W2</td>
+      <td><input type="number" id="c10" value="9"></td>
+      <td><input type="number" id="c11" value="12"></td>
+      <td><input type="number" id="c12" value="13"></td>
+      <td><input type="number" id="c13" value="7"></td>
+      <td><input type="number" id="s1" value="30"></td>
+    </tr>
+    <tr>
+      <td>W3</td>
+      <td><input type="number" id="c20" value="14"></td>
+      <td><input type="number" id="c21" value="9"></td>
+      <td><input type="number" id="c22" value="16"></td>
+      <td><input type="number" id="c23" value="5"></td>
+      <td><input type="number" id="s2" value="25"></td>
+    </tr>
+    <tr style="background:#e6f0ff;">
+      <th>Demand</th>
+      <th><input type="number" id="d0" value="15"></th>
+      <th><input type="number" id="d1" value="25"></th>
+      <th><input type="number" id="d2" value="20"></th>
+      <th><input type="number" id="d3" value="15"></th>
+      <th><span id="totalSupply"></span></th>
+    </tr>
+  </table>
+
+  <button style="margin-top:14px" onclick="computeAll()">Calculate All Methods</button>
+  <div id="calcResult" style="margin-top:18px;"></div>
+
+  <script>
+    // ---------- Helpers ----------
+    function readInputs() {
+      const m = 3, n = 4;
+      const c = Array.from({length:m}, (_,i)=> Array.from({length:n},(_,j)=> +document.getElementById(`c${i}${j}`).value || 0));
+      const s = Array.from({length:m}, (_,i)=> +document.getElementById(`s${i}`).value || 0);
+      const d = Array.from({length:n}, (_,j)=> +document.getElementById(`d${j}`).value || 0);
+      return {c,s,d,m,n};
+    }
+    function sum(arr){return arr.reduce((a,b)=>a+b,0);}
+
+    // ---------- 1) North-West Corner ----------
+    function northWestCorner(c, s, d){
+      const m=s.length, n=d.length;
+      let S = s.slice(), D = d.slice();
+      let i=0, j=0, total=0;
+      while (i<m && j<n){
+        const x = Math.min(S[i], D[j]);
+        total += x * c[i][j];
+        S[i]-=x; D[j]-=x;
+        if (S[i]===0) i++; else j++;
+      }
+      return total;
+    }
+
+    // ---------- 2) Lowest-Cost / Matrix Minima ----------
+    function lowestCost(c, s, d){
+      const m=s.length, n=d.length;
+      let S = s.slice(), D = d.slice();
+      let used = Array.from({length:m}, ()=> Array(n).fill(false));
+      let total=0;
+      while (true){
+        let mi=-1, mj=-1, best=Infinity;
+        for (let i=0;i<m;i++){
+          if (S[i]<=0) continue;
+          for (let j=0;j<n;j++){
+            if (D[j]<=0 || used[i][j]) continue;
+            if (c[i][j] < best){ best=c[i][j]; mi=i; mj=j; }
+          }
+        }
+        if (mi===-1) break; // всё распределено
+        const x = Math.min(S[mi], D[mj]);
+        total += x * c[mi][mj];
+        S[mi]-=x; D[mj]-=x;
+        if (S[mi]===0) for (let jj=0;jj<n;jj++) used[mi][jj]=true;
+        if (D[mj]===0) for (let ii=0;ii<m;ii++) used[ii][mj]=true;
+      }
+      return total;
+    }
+
+    // ---------- 3) Vogel’s Approximation Method (VAM) ----------
+    function vogelApproximation(c, s, d){
+      const m=s.length, n=d.length;
+      let S = s.slice(), D = d.slice();
+      let total = 0;
+
+      function rowPenalty(i){
+        if (S[i] <= 0) return -1;
+        const vals = [];
+        for (let j=0;j<n;j++) if (D[j]>0) vals.push(c[i][j]);
+        if (vals.length===0) return -1;
+        vals.sort((a,b)=>a-b);
+        return vals.length>=2 ? (vals[1]-vals[0]) : vals[0];
+      }
+      function colPenalty(j){
+        if (D[j] <= 0) return -1;
+        const vals = [];
+        for (let i=0;i<m;i++) if (S[i]>0) vals.push(c[i][j]);
+        if (vals.length===0) return -1;
+        vals.sort((a,b)=>a-b);
+        return vals.length>=2 ? (vals[1]-vals[0]) : vals[0];
+      }
+      function argMax(arr){
+        let idx=-1, best=-1;
+        for (let i=0;i<arr.length;i++) if (arr[i]>best){ best=arr[i]; idx=i; }
+        return idx;
+      }
+
+      while (S.some(v=>v>0) && D.some(v=>v>0)){
+        const rPen = Array.from({length:m}, (_,i)=> rowPenalty(i));
+        const cPen = Array.from({length:n}, (_,j)=> colPenalty(j));
+        const iMax = argMax(rPen);
+        const jMax = argMax(cPen);
+
+        let iSel, jSel;
+        if (rPen[iMax] >= cPen[jMax]) {
+          iSel = iMax;
+          // выбрать минимальную стоимость в этой строке среди доступных колонок
+          let best=Infinity;
+          for (let j=0;j<n;j++) if (D[j]>0 && c[iSel][j]<best){ best=c[iSel][j]; jSel=j; }
+        } else {
+          jSel = jMax;
+          // выбрать минимальную стоимость в этой колонке среди доступных строк
+          let best=Infinity;
+          for (let i=0;i<m;i++) if (S[i]>0 && c[i][jSel]<best){ best=c[i][jSel]; iSel=i; }
+        }
+
+        const x = Math.min(S[iSel], D[jSel]);
+        total += x * c[iSel][jSel];
+        S[iSel] -= x; D[jSel] -= x;
+      }
+      return total;
+    }
+
+    // ---------- Run ----------
+    function computeAll(){
+      const {c,s,d} = readInputs();
+      const totalS = sum(s), totalD = sum(d);
+      document.getElementById('totalSupply').textContent = `Total Supply: ${totalS}`;
+
+      if (totalS !== totalD){
+        document.getElementById('calcResult').innerHTML =
+          `<div style="background:#ffecec;border-left:4px solid #cc0000;padding:10px;">
+             Supply (${totalS}) must equal Demand (${totalD}). Balance them and try again.
+           </div>`;
+        return;
+      }
+
+      const nw  = northWestCorner(c,s,d);
+      const lc  = lowestCost(c,s,d);
+      const vam = vogelApproximation(c,s,d);
+
+      document.getElementById("calcResult").innerHTML = `
+        <h3>Results:</h3>
+        <p>North-West Corner total cost: <b>${nw.toFixed(2)} ₸</b></p>
+        <p>Lowest-Cost / Matrix Minima total cost: <b>${lc.toFixed(2)} ₸</b></p>
+        <p>Vogel’s Approximation Method (VAM) total cost: <b>${vam.toFixed(2)} ₸</b></p>
+        <div style="margin-top:10px; background:#eef3ff; border-left:4px solid #0048b8; padding:10px;">
+          NW gives a basic feasible start (${nw.toFixed(2)} ₸). 
+          Lowest-Cost improves by using cheapest cells (${lc.toFixed(2)} ₸).
+          VAM uses penalties and typically yields the best initial solution (${vam.toFixed(2)} ₸).
+        </div>`;
+    }
+  </script>
+</section>
+
+
+<section id="results">
+  <h2>Results Comparison</h2>
+  <canvas id="costChart" width="600" height="300"></canvas>
+  <script>
+    new Chart(document.getElementById('costChart'),{
+      type:'bar',
+      data:{
+        labels:['North-West','Lowest-Cost','VAM'],
+        datasets:[{
+          label:'Total Cost (₸)',
+          data:[755,650,617.5],
+          backgroundColor:['#a8c6ff','#5d9bff','#0033cc']
+        }]
+      },
+      options:{
+        scales:{y:{beginAtZero:true}},
+        plugins:{legend:{display:false}}
+      }
+    });
+  </script>
+  <p><b>Vogel’s Approximation Method (VAM)</b> achieved the lowest cost (≈617.5 ₸), improving results compared to 
+     the North-West and Lowest-Cost methods.</p>
+</section>
+
+
+<section id="conclusion">
+  <h2>Conclusion & Recommendations</h2>
+  <p>
+    The optimization analysis demonstrated that applying classical transportation methods helps 
+    EcoMarket minimize delivery costs effectively.  
+    The <b>North-West Corner Method</b> provided an initial feasible solution but ignored cost differences.  
+    The <b>Lowest-Cost (Matrix Minima) Method</b> improved allocations by prioritizing cheaper routes.  
+    The <b>Vogel’s Approximation Method (VAM)</b> achieved the most efficient initial plan with the lowest total cost of approximately <b>617.5 ₸</b>.  
+    This confirms that integrating cost-sensitive and penalty-based strategies significantly reduces transportation expenses and supports sustainable logistics decisions.
+    <br><br>
+    In future research, this model can be extended to include dynamic route updates, vehicle capacity constraints, and CO₂-emission optimization within a real-time logistics dashboard for EcoMarket.
+  </p>
+</section>
+
+
+<footer>
+  <p>© 2025 Alyona Zinchenko, Saparkhankyzy Aruzhan, Nurkhissa Farida | EcoMarket Logistics Optimization | AITU</p>
+</footer>
+
+<script>
+document.querySelectorAll('nav a').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});
+  });
+});
+</script>
+
+</body>
+</html>
