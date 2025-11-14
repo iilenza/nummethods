@@ -299,6 +299,128 @@ x<sub>ij</sub> ≥ 0
   </script>
 </section>
 
+<section id="optimization">
+  <h2>Optimization (MODI Method)</h2>
+
+  <p>
+    After obtaining an initial feasible solution (NW, Lowest-Cost, or VAM),
+    we apply the <b>MODI (u–v Method)</b> to check optimality.
+  </p>
+
+  <button onclick="runMODI_safe()">Run MODI Optimization</button>
+  <div id="modiResult" style="margin-top:20px;"></div>
+
+  <script>
+    function computeVAMAlloc_safe(c, s, d){
+        const m=s.length, n=d.length;
+        let S=s.slice(), D=d.slice();
+        let alloc = Array.from({length:m},()=>Array(n).fill(0));
+
+        function rowPenalty(i){
+            const vals=[]; if(S[i]<=0) return -1;
+            for(let j=0;j<n;j++) if(D[j]>0) vals.push(c[i][j]);
+            if(!vals.length) return -1;
+            vals.sort((a,b)=>a-b);
+            return vals.length>1 ? vals[1]-vals[0] : vals[0];
+        }
+        function colPenalty(j){
+            const vals=[]; if(D[j]<=0) return -1;
+            for(let i=0;i<m;i++) if(S[i]>0) vals.push(c[i][j]);
+            if(!vals.length) return -1;
+            vals.sort((a,b)=>a-b);
+            return vals.length>1 ? vals[1]-vals[0] : vals[0];
+        }
+        function argMax(arr){
+            let idx=-1, best=-1;
+            for(let i=0;i<arr.length;i++) if(arr[i]>best){best=arr[i];idx=i;}
+            return idx;
+        }
+
+        while(S.some(v=>v>0) && D.some(v=>v>0)){
+            let rPen=S.map((_,i)=>rowPenalty(i));
+            let cPen=D.map((_,j)=>colPenalty(j));
+
+            let iMax=argMax(rPen);
+            let jMax=argMax(cPen);
+
+            let iSel, jSel;
+            if(rPen[iMax]>=cPen[jMax]){
+                iSel=iMax;
+                jSel=[...Array(n).keys()]
+                       .filter(j=>D[j]>0)
+                       .reduce((minJ,j)=>c[iSel][j]<c[iSel][minJ]?j:minJ);
+            } else {
+                jSel=jMax;
+                iSel=[...Array(m).keys()]
+                       .filter(i=>S[i]>0)
+                       .reduce((minI,i)=>c[i][jSel]<c[minI][jSel]?i:minI);
+            }
+
+            const x=Math.min(S[iSel],D[jSel]);
+            alloc[iSel][jSel]=x;
+            S[iSel]-=x;
+            D[jSel]-=x;
+        }
+        return alloc;
+    }
+
+    function runMODI_safe(){
+        const {c,s,d} = readInputs();
+        const m=s.length, n=d.length;
+
+        const alloc = computeVAMAlloc_safe(c,s,d);
+        let u=Array(m).fill(null);
+        let v=Array(n).fill(null);
+        u[0]=0;
+
+        let changed=true;
+        while(changed){
+            changed=false;
+            for(let i=0;i<m;i++){
+                for(let j=0;j<n;j++){
+                    if(alloc[i][j]>0){
+                        if(u[i]!==null && v[j]===null){ v[j]=c[i][j]-u[i]; changed=true; }
+                        if(v[j]!==null && u[i]===null){ u[i]=c[i][j]-v[j]; changed=true; }
+                    }
+                }
+            }
+        }
+
+        let bestDelta=0, bestI=-1, bestJ=-1;
+
+        for(let i=0;i<m;i++){
+            for(let j=0;j<n;j++){
+                if(alloc[i][j]===0){
+                    const delta = c[i][j] - (u[i]+v[j]);
+                    if(delta < bestDelta){
+                        bestDelta = delta;
+                        bestI=i; bestJ=j;
+                    }
+                }
+            }
+        }
+
+        const resultDiv=document.getElementById("modiResult");
+
+        if(bestDelta===0){
+            resultDiv.innerHTML = `
+                <div style="background:#e6ffe6;border-left:4px solid green;padding:10px;">
+                  All Δ ≥ 0 → The VAM solution is <b>optimal</b>.
+                </div>`;
+        } else {
+            resultDiv.innerHTML = `
+                <h3>MODI Analysis:</h3>
+                <p>Most negative Δ = <b>${bestDelta}</b> at cell 
+                   (<b>W${bestI+1}, Shop ${bestJ+1}</b>).</p>
+                <p>This indicates that further improvement is possible.</p>
+                <div style="background:#fff3cd;border-left:4px solid #b38f00;padding:10px;">
+                  Perform a stepping-stone cycle (+ − + −) for this cell to update flows.
+                </div>`;
+        }
+    }
+  </script>
+</section>
+
 
 <section id="results">
   <h2>Results Comparison</h2>
@@ -355,3 +477,4 @@ document.querySelectorAll('nav a').forEach(a=>{
 
 </body>
 </html>
+
